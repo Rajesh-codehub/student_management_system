@@ -7,6 +7,8 @@ from datetime import datetime, timedelta
 import calendar
 from calendar import month_name
 from auth import auth_bp
+from notify import notify_bp
+from dashboard import dashboard_bp
 import json
 import os
 from dotenv import load_dotenv
@@ -18,6 +20,8 @@ load_dotenv()
 
 app = Flask(__name__)
 app.register_blueprint(auth_bp)
+app.register_blueprint(notify_bp)
+app.register_blueprint(dashboard_bp)
 CORS(app)
 
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", 'default_secret')
@@ -537,9 +541,9 @@ def add_subject():
     subject_name = request.form.get('subject_name')
     subject_code = request.form.get('subject_code')
     grade_level = request.form.get('grade_level')
-    teacher_id = request.form.get('teacher_id')
+    #teacher_id = request.form.get('teacher_id')
 
-    if not all([subject_name, subject_code, grade_level, teacher_id]):
+    if not all([subject_name, subject_code]):
         return jsonify({"status": "error", "message": "Missing required fields"}), 400
 
     conn = create_connection()
@@ -547,10 +551,10 @@ def add_subject():
         try:
             cursor = conn.cursor()
             query = """
-                INSERT INTO subjects (subject_name, subject_code, grade_level)
-                VALUES (%s, %s, %s)
+                INSERT INTO subjects (subject_name, subject_code)
+                VALUES (%s, %s)
             """
-            cursor.execute(query, (subject_name, subject_code, grade_level))
+            cursor.execute(query, (subject_name, subject_code))
             conn.commit()
             subject_id = cursor.lastrowid
             return jsonify({
@@ -559,8 +563,8 @@ def add_subject():
                 "data": {
                     "subject_id": subject_id,
                     "subject_name": subject_name,
-                    "subject_code": subject_code,
-                    "grade_level": grade_level
+                    "subject_code": subject_code
+                    
                 }
             }), 201
         except Exception as e:
@@ -666,7 +670,7 @@ def link_parent():
         close_connection(connection)
 
 # Get Student Parents
-@app.route('/api/students/<int:student_id>/parents', methods=['GET'])
+@app.route('/api/students/<int:student_id>/', methods=['GET'])
 def get_student_parents(student_id):
     connection = create_connection()
     if not connection:
