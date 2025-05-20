@@ -22,14 +22,9 @@ app = Flask(__name__)
 app.register_blueprint(auth_bp)
 app.register_blueprint(notify_bp)
 app.register_blueprint(dashboard_bp)
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "*"}}) 
 
-app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", 'default_secret')
-
-
-
-
-
+app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", 'y&f9Mv$e!zR3P@bE#tKqU1Xc4gL*oN7a')
 
 
 
@@ -605,6 +600,47 @@ def add_exam_result():
         return jsonify({'status': 'error', 'message': str(e)}), 500
     finally:
         close_connection(connection)
+@app.route("/get_student_result", methods = ["GET"])
+def get_student_result():
+    student_id = request.args.get("student_id")
+
+    if not student_id:
+        jsonify({"Error":"student_id is required"}), 400
+
+    conn = create_connection()
+    cursor = conn.cursor(dictionary = True)
+
+    try:
+        query ="""
+        SELECT
+        er.result_id,
+        er.exam_id,
+        e.exam_name,
+        er.subject_id,
+        s.subject_name,
+        er.marks_obtained,
+        er.total_marks,
+        er.grade,
+        er.remarks
+        from exam_results er
+        join exams e on er.exam_id = e.exam_id
+        join subjects s on er.subject_id = s.subject_id
+        where er.student_id = %s"""
+
+        cursor.execute(query, (student_id,))
+        results  = cursor.fetchall()
+
+        if not results:
+            return jsonify({"message":"no results found for the given student_id"}), 404
+
+        return jsonify({"student_id":student_id, "results":results}), 200
+    except Exception as e:
+        return jsonify({"Error":str(e)}), 500
+    finally:
+        cursor.close()
+        close_connection(conn)
+
+
 
 # Add Parent
 @app.route('/api/parents', methods=['POST'])
@@ -710,6 +746,6 @@ def get_student_parents(student_id):
 
 
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
+    #app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "default_secret")
     app.run(debug=True)

@@ -12,7 +12,7 @@ def create_connection():
         db_config = {
             'host': os.getenv('DB_HOST', 'localhost'),
             'user': os.getenv('DB_USERNAME', 'root'),
-            'password': os.getenv('DB_PASSWORD', ''),
+            'password': os.getenv('DB_PASSWORD', 'Rajubay@123'),
             'database': os.getenv('DB_NAME', 'sms')
         }
         
